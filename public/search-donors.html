@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Find Donors - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="user-dashboard.html">Dashboard</a></li>
+            <li><a href="search-donors.html" class="active">Find Donors</a></li>
+            <li><a href="profile.html">My Profile</a></li>
+            <li><a href="#" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="glass-card full-width">
+            <h3>Find Compatible Donors</h3>
+            <p>Select the patient's blood group to find compatible donors.</p>
+            <div class="search-bar">
+                <select id="searchGroup">
+                    <option value="">Select Patient Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+                <button id="searchBtn" class="btn btn-primary">Search</button>
+            </div>
+
+            <div id="searchResults" class="donor-results"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = 'login.html';
+
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const group = document.getElementById('searchGroup').value;
+            if (!group) return;
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const res = await fetch(`/api/users/search/${encodeURIComponent(group)}`, {
+                    headers: authHeader()
+                });
+
+                if (!res.ok) throw new Error('Search failed');
+
+                const donors = await res.json();
+
+                resultsDiv.innerHTML = '';
+                if (donors.length === 0) {
+                    resultsDiv.innerHTML = '<p style="text-align:center;">No available donors found matching this criteria.</p>';
+                    return;
+                }
+
+                donors.forEach(d => {
+                    const el = document.createElement('div');
+                    el.className = 'donor-card';
+                    el.innerHTML = `
+                        <h4>${d.name}</h4>
+                        <div style="display:flex; justify-content:space-between; margin:10px 0;">
+                            <span class="badge badge-error" style="background:var(--primary-red); color:white;">${d.bloodGroup}</span>
+                            <span class="badge badge-success">Available</span>
+                        </div>
+                        <p>📍 ${d.location}</p>
+                        <p>📞 <a href="tel:${d.phone}" style="color:var(--text-dark); font-weight:bold;">${d.phone}</a></p>
+                        <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
+                        <small style="color:#666;">Last Donation: ${d.lastDonationDate ? new Date(d.lastDonationDate).toLocaleDateString() : 'Never'}</small>
+                    `;
+                    resultsDiv.appendChild(el);
+                });
+            } catch (err) {
+                console.error(err);
+                resultsDiv.innerHTML = '<p class="message-box error">Error performing search.</p>';
+            }
+        });
+    </script>
+</body>
+
+</html>

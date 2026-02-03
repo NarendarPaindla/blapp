@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Profile - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="user-dashboard.html">Dashboard</a></li>
+            <li><a href="search-donors.html">Find Donors</a></li>
+            <li><a href="profile.html" class="active">My Profile</a></li>
+            <li><a href="#" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="glass-card form-wrapper">
+            <h2>Edit Profile</h2>
+            <form id="profileForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="name">
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" id="phone">
+                </div>
+                <div class="form-group">
+                    <label>Location</label>
+                    <input type="text" id="location">
+                </div>
+
+                <hr style="margin: 2rem 0; border: 0; border-top: 1px solid #ddd;">
+
+                <h3>Donor Settings</h3>
+                <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+                    <input type="checkbox" id="isDonor" style="width:20px; height:20px;">
+                    <label for="isDonor" style="margin:0; cursor:pointer;">I want to donate blood</label>
+                </div>
+
+                <div id="donorFields" style="display:none;">
+                    <div class="form-group">
+                        <label>Blood Group</label>
+                        <select id="bloodGroup">
+                            <option value="">Select</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Availability Status</label>
+                        <select id="availabilityStatus">
+                            <option value="Available">Available</option>
+                            <option value="Unavailable">Unavailable</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Last Donation Date</label>
+                        <input type="date" id="lastDonationDate">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top:20px;">Save Changes</button>
+            </form>
+            <div id="message" class="message-box"></div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        const user = getUser();
+        if (!user) window.location.href = 'login.html';
+
+        // Load Data
+        async function loadData() {
+            const res = await fetch('/api/auth/profile', { headers: authHeader() });
+            const profile = await res.json();
+
+            document.getElementById('name').value = profile.name;
+            document.getElementById('phone').value = profile.phone;
+            document.getElementById('location').value = profile.location;
+
+            const isDonorCheckbox = document.getElementById('isDonor');
+            isDonorCheckbox.checked = profile.isDonor;
+            toggleDonorFields(profile.isDonor);
+
+            if (profile.isDonor) {
+                document.getElementById('bloodGroup').value = profile.bloodGroup || '';
+                document.getElementById('availabilityStatus').value = profile.availabilityStatus || 'Available';
+                if (profile.lastDonationDate) {
+                    document.getElementById('lastDonationDate').value = profile.lastDonationDate.split('T')[0];
+                }
+            }
+        }
+
+        function toggleDonorFields(show) {
+            document.getElementById('donorFields').style.display = show ? 'block' : 'none';
+        }
+
+        document.getElementById('isDonor').addEventListener('change', (e) => {
+            toggleDonorFields(e.target.checked);
+        });
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const isDonor = document.getElementById('isDonor').checked;
+
+            const data = {
+                name: document.getElementById('name').value,
+                phone: document.getElementById('phone').value,
+                location: document.getElementById('location').value,
+                isDonor: isDonor
+            };
+
+            if (isDonor) {
+                data.bloodGroup = document.getElementById('bloodGroup').value;
+                data.availabilityStatus = document.getElementById('availabilityStatus').value;
+                data.lastDonationDate = document.getElementById('lastDonationDate').value || null;
+
+                if (!data.bloodGroup) {
+                    alert('Blood Group is required for donors');
+                    return;
+                }
+            }
+
+            try {
+                const res = await fetch('/api/users/profile', {
+                    method: 'PUT',
+                    headers: authHeader(),
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    const updated = await res.json();
+                    localStorage.setItem('userInfo', JSON.stringify(updated)); // Update name/role in local storage
+                    showMessage('message', 'Profile Updated Successfully');
+                } else {
+                    showMessage('message', 'Update Failed', 'error');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        loadData();
+    </script>
+</body>
+
+</html>

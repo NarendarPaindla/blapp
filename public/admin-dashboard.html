@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .admin-table th {
+            background: rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">BloodLink <span class="badge badge-critical">ADMIN</span></div>
+        <ul class="nav-links">
+            <li><a href="#" class="active">Dashboard</a></li>
+            <li><a href="#" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="glass-card full-width">
+            <h2>Inventory Management</h2>
+            <form id="inventoryForm" class="inline-form" style="margin-top:1rem;">
+                <select id="invGroup">
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+                <input type="number" id="invQty" placeholder="Qty">
+                <select id="invOp">
+                    <option value="add">Add</option>
+                    <option value="subtract">Remove</option>
+                </select>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form>
+
+            <div id="inventoryStats" class="inventory-grid"></div>
+        </div>
+
+        <div class="glass-card full-width" style="margin-top:2rem;">
+            <h2>User Management</h2>
+            <div style="overflow-x:auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Donor Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        const user = getUser();
+        if (!user || user.role !== 'admin') {
+            window.location.href = 'login.html';
+        }
+
+        // Inventory
+        async function loadInventory() {
+            const res = await fetch('/api/inventory');
+            const data = await res.json();
+            const grid = document.getElementById('inventoryStats');
+            grid.innerHTML = '';
+
+            const groups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+            groups.forEach(g => {
+                const item = data.find(i => i.bloodGroup === g);
+                const count = item ? item.availableUnits : 0;
+
+                const card = document.createElement('div');
+                card.className = `inventory-card ${count < 5 ? 'status-critical' : 'status-safe'}`;
+                card.innerHTML = `<h3>${g}</h3><p>${count} Units</p>`;
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('inventoryForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                bloodGroup: document.getElementById('invGroup').value,
+                quantity: document.getElementById('invQty').value,
+                operation: document.getElementById('invOp').value
+            };
+            await fetch('/api/admin/inventory', {
+                method: 'PUT',
+                headers: authHeader(),
+                body: JSON.stringify(data)
+            });
+            loadInventory();
+        });
+
+        // Users
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users', { headers: authHeader() });
+            const users = await res.json();
+            const tbody = document.getElementById('userTable');
+            tbody.innerHTML = '';
+
+            users.forEach(u => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${u.name}</td>
+                    <td>${u.email}</td>
+                    <td>${u.role}</td>
+                    <td>${u.isDonor ? '✅ Donor' : '❌'}</td>
+                    <td>
+                        <button onclick="deleteUser('${u._id}')" style="color:red; border:none; background:none; cursor:pointer;">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function deleteUser(id) {
+            if (!confirm('Are you sure?')) return;
+            await fetch(`/api/admin/users/${id}`, {
+                method: 'DELETE',
+                headers: authHeader()
+            });
+            loadUsers();
+        }
+
+        loadInventory();
+        loadUsers();
+    </script>
+</body>
+
+</html>

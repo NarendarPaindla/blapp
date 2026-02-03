@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blood Inventory Dashboard - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="register.html">Register Donor</a></li>
+            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="emergency.html" class="emergency-link">Emergency</a></li>
+        </ul>
+    </nav>
+
+    <div class="container dashboard-container">
+        <div class="glass-card full-width">
+            <h2>Live Blood Inventory</h2>
+            <div id="inventory-grid" class="inventory-grid">
+                <!-- Javascript will populate this -->
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div class="inventory-updates">
+                <h3>Update Stock (Admin)</h3>
+                <form id="updateInventoryForm" class="inline-form">
+                    <select id="updateGroup" required>
+                        <option value="">Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                    <input type="number" id="updateQuantity" placeholder="Qty" min="1" required>
+                    <select id="updateOperation" required>
+                        <option value="add">Add</option>
+                        <option value="subtract">Remove</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary">Update</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Search Functionality -->
+        <div class="glass-card full-width match-donors">
+            <h2>Find Compatible Donors</h2>
+            <div class="search-bar">
+                <select id="patientBloodGroup">
+                    <option value="">Select Patient Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                </select>
+                <button id="searchDonorsBtn" class="btn btn-primary">Search</button>
+            </div>
+            <div id="donorParamOutput" class="donor-results">
+                <!-- Results go here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

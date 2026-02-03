@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="user-dashboard.html" class="active">Dashboard</a></li>
+            <li><a href="search-donors.html">Find Donors</a></li>
+            <li><a href="profile.html">My Profile</a></li>
+            <li><a href="#" class="logout-btn">Logout</a></li>
+        </ul>
+    </nav>
+
+    <div id="emergency-banner" class="emergency-banner hidden"></div>
+
+    <div class="container dashboard-container">
+        <!-- Welcome Section -->
+        <div class="glass-card">
+            <h2 id="welcomeMsg">Welcome, User</h2>
+            <p>Your blood type: <span id="userBloodGroup" style="font-weight:bold;">Loading...</span></p>
+            <div id="donorStatusBadge" class="badge badge-normal" style="display:inline-block; margin-top:10px;">User
+            </div>
+        </div>
+
+        <!-- Create Request -->
+        <div class="glass-card full-width">
+            <h3>Request Blood</h3>
+            <form id="requestForm" class="row-form">
+                <div class="form-row">
+                    <input type="text" id="patientName" placeholder="Patient Name" required>
+                    <select id="reqBloodGroup" required>
+                        <option value="">Group Needed</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                    <input type="number" id="units" placeholder="Units" min="1" required>
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <input type="text" id="hospital" placeholder="Hospital Name" required>
+                    <select id="urgency" required>
+                        <option value="Normal">Normal</option>
+                        <option value="Urgent">Urgent</option>
+                        <option value="Critical">Critical</option>
+                    </select>
+                    <button type="submit" class="btn btn-warning">Create Request</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Search Donors Moved to Separate Page -->
+        <div class="glass-card full-width" style="text-align:center;">
+            <h3>Looking for Blood?</h3>
+            <p>Use our dedicated search tool to find compatible donors near you.</p>
+            <a href="search-donors.html" class="btn btn-primary"
+                style="margin-top:1rem; display:inline-block; color:white;">Search Donors</a>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Init User Data
+        const user = getUser();
+        if (!user) window.location.href = 'login.html';
+
+        document.getElementById('welcomeMsg').innerText = `Welcome, ${user.name}`;
+
+        // Fetch full profile to get latest status
+        async function loadProfile() {
+            try {
+                const res = await fetch('/api/auth/profile', { headers: authHeader() });
+                const profile = await res.json();
+
+                document.getElementById('userBloodGroup').innerText = profile.isDonor ? profile.bloodGroup : 'Not set';
+                const badge = document.getElementById('donorStatusBadge');
+                if (profile.isDonor) {
+                    badge.innerText = 'Active Donor';
+                    badge.className = 'badge badge-success';
+                    badge.style.background = 'var(--success)';
+                    badge.style.color = 'white';
+                } else {
+                    badge.innerText = 'Not a Donor';
+                    badge.className = 'badge badge-urgent';
+                }
+            } catch (err) { console.error(err); }
+        }
+        loadProfile();
+
+        // Handle Request Creation
+        document.getElementById('requestForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                patientName: document.getElementById('patientName').value,
+                requiredBloodGroup: document.getElementById('reqBloodGroup').value,
+                unitsRequired: document.getElementById('units').value,
+                hospitalName: document.getElementById('hospital').value,
+                urgencyLevel: document.getElementById('urgency').value
+            };
+
+            try {
+                const res = await fetch('/api/requests', {
+                    method: 'POST',
+                    headers: authHeader(),
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert('Request Created!');
+                    e.target.reset();
+                } else {
+                    const err = await res.json();
+                    alert(err.message || 'Error creating request');
+                }
+            } catch (err) { console.error(err); }
+        });
+
+        // Handle Search
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const group = document.getElementById('searchGroup').value;
+            if (!group) return;
+
+            const resultsDiv = document.getElementById('searchResults');
+            resultsDiv.innerHTML = '<div class="loading-spinner"></div>';
+
+            try {
+                const res = await fetch(`/api/users/search/${encodeURIComponent(group)}`, {
+                    headers: authHeader()
+                });
+                const donors = await res.json();
+
+                resultsDiv.innerHTML = '';
+                if (donors.length === 0) {
+                    resultsDiv.innerHTML = '<p>No available donors found.</p>';
+                    return;
+                }
+
+                donors.forEach(d => {
+                    const el = document.createElement('div');
+                    el.className = 'donor-card';
+                    // PRIVACY: Only showing allowed fields
+                    el.innerHTML = `
+                        <h4>${d.name}</h4>
+                        <p>Group: <strong>${d.bloodGroup}</strong></p>
+                        <p>📍 ${d.location}</p>
+                        <p>📞 <a href="tel:${d.phone}">${d.phone}</a></p>
+                    `;
+                    resultsDiv.appendChild(el);
+                });
+            } catch (err) {
+                console.error(err);
+                resultsDiv.innerHTML = '<p>Error searching.</p>';
+            }
+        });
+    </script>
+</body>
+
+</html>

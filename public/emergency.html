@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Requests - BloodLink</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="register.html">Register Donor</a></li>
+            <li><a href="dashboard.html">Dashboard</a></li>
+            <li><a href="emergency.html" class="active emergency-link">Emergency</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+
+        <!-- Create Request Form -->
+        <div class="glass-card form-wrapper">
+            <h2>Create Blood Request</h2>
+            <form id="requestForm">
+                <div class="form-group">
+                    <label>Patient Name</label>
+                    <input type="text" id="patientName" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Blood Group Needed</label>
+                        <select id="reqBloodGroup" required>
+                            <option value="">Select</option>
+                            <option value="A+">A+</option>
+                            <option value="A-">A-</option>
+                            <option value="B+">B+</option>
+                            <option value="B-">B-</option>
+                            <option value="AB+">AB+</option>
+                            <option value="AB-">AB-</option>
+                            <option value="O+">O+</option>
+                            <option value="O-">O-</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Units Needed</label>
+                        <input type="number" id="units" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Hospital Name</label>
+                    <input type="text" id="hospital" required>
+                </div>
+                <div class="form-group">
+                    <label>Urgency Level</label>
+                    <select id="urgency" required>
+                        <option value="Normal">Normal</option>
+                        <option value="Urgent">Urgent</option>
+                        <option value="Critical">CRITICAL EMERGENCY</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-warning btn-block">Submit Request</button>
+            </form>
+        </div>
+
+        <!-- Request Feed -->
+        <div class="request-feed">
+            <h2 class="section-title">Active Blood Requests</h2>
+            <div id="requestList" class="request-list">
+                <!-- Javascript will populate -->
+            </div>
+        </div>
+
+    </div>
+
+    <script src="js/main.js"></script>
+    <script src="js/emergency.js"></script>
+</body>
+
+</html>

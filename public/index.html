@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>BloodLink - Public Home</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <nav class="sticky-nav">
+        <div class="logo">Blood<span class="accent">Link</span></div>
+        <ul class="nav-links">
+            <li><a href="index.html" class="active">Home</a></li>
+            <li><a href="login.html">Login</a></li>
+            <li><a href="register.html" class="btn btn-primary" style="color:white; box-shadow:none;">Register</a></li>
+        </ul>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-content glass-card">
+            <h1>Save a Life Today</h1>
+            <p>Join our community of donors and make a difference.</p>
+            <div class="cta-buttons">
+                <a href="register.html" class="btn btn-primary">Join as Donor</a>
+                <a href="login.html" class="btn btn-secondary">Find Blood</a>
+            </div>
+        </div>
+    </header>
+
+    <section class="container" style="padding: 4rem 5%;">
+        <div class="glass-card full-width">
+            <h2 style="text-align: center; margin-bottom: 2rem;">Real-Time Donor Availability</h2>
+            <p style="text-align:center; margin-bottom:2rem;">(Privacy protected: Only aggregate counts shown)</p>
+            <div id="stats-grid" class="inventory-grid">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/main.js"></script>
+    <script>
+        // Fetch Public Stats
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/users/stats');
+                const stats = await res.json();
+                const grid = document.getElementById('stats-grid');
+                grid.innerHTML = '';
+
+                const allGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+                allGroups.forEach(group => {
+                    const data = stats.find(s => s._id === group);
+                    const count = data ? data.count : 0;
+
+                    const card = document.createElement('div');
+                    card.className = 'inventory-card status-safe'; // Always green for public view aesthetics
+                    card.innerHTML = `
+                        <h3>${group}</h3>
+                        <p><strong>${count}</strong> Donors Available</p>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        document.addEventListener('DOMContentLoaded', loadStats);
+    </script>
+</body>
+
+</html>
