@@ -2,152 +2,91 @@
 
 ## Abstract
 
-Blood transfusion support requires a coordinated workflow across donors, requesters, and administrators. Delays in donor discovery or stock verification can directly affect patient care windows, particularly in urgent and critical demand conditions. The implemented system addresses this requirement through an integrated web application that combines user management, compatibility-aware donor search, blood request processing, and blood inventory maintenance.
+The BloodLink platform is implemented as a web-based coordination system for blood donation and emergency blood request management. The system integrates donor profile maintenance, blood-group-compatible donor discovery, request lifecycle recording, and inventory visibility into a single application stack. The implementation uses Node.js and Express for service orchestration, MongoDB for persistent data storage, and role-aware authentication controls based on JSON Web Tokens.
 
-The backend is implemented using Node.js with Express, and persistent storage is handled through MongoDB using Mongoose schemas. Authentication and route protection are implemented with JWT-based authorization and middleware-driven access control. The frontend is delivered as static HTML/CSS/JavaScript pages, allowing clear separation between user interactions and API-driven business processing.
+The operational design emphasizes practical deployment in institutional and community settings where response time and data consistency are critical. Instead of informal communication-based coordination, the system maintains structured records for users, requests, and inventory. Compatibility filtering logic is explicitly encoded using blood-group rules so that donor results are deterministic and medically interpretable.
 
-The operational design emphasizes deterministic decision logic and traceable data updates. Instead of probabilistic matching, blood-group compatibility is implemented through explicit rule mapping and availability filtering. This ensures that search output remains transparent, medically interpretable, and easy to verify during institutional review.
+The developed solution also supports modular expansion. Route-level separation, schema-based validation, and static frontend pages provide a maintainable foundation for future additions such as notifications, analytics, and stronger administrative governance.
 
 ## Problem Statement
 
-In many practical settings, blood coordination depends on informal communication channels, fragmented records, and manual cross-verification of donor eligibility and blood-group compatibility. These practices are difficult to scale during simultaneous requests and do not provide reliable state visibility for stakeholders.
+Blood availability management is often affected by fragmented records, delayed communication between requesters and donors, and the absence of a centralized status view. In manual workflows, the effort required to locate compatible donors and verify blood stock increases rapidly during critical demand periods. These process weaknesses can delay transfusion support and place additional burden on hospital and volunteer networks.
 
-Key process-level problems include delayed donor identification, inconsistent donor availability records, weak request status tracking, and lack of centralized operational control. Without a unified system, administrative teams must repeatedly reconcile data from multiple sources, increasing turnaround time and introducing avoidable errors. The system documented here addresses this gap by implementing a centralized, role-aware, API-based workflow for blood coordination.
+The repository implementation addresses this gap by introducing a centralized digital workflow. User registration and authentication establish identity. Donor participation status and blood group are captured within profile data. Urgency-based blood requests are stored in structured form, and inventory records are updated through API transactions. The resulting architecture improves traceability, reduces repetition in coordination steps, and supports faster operational response.
 
 ## 1.1 Objectives
 
-The system is designed to satisfy the following objectives in technical and operational terms:
+The implementation is designed to satisfy the following objectives:
 
-1. Provide a centralized platform for registration, profile management, donor activation, blood request handling, and inventory visibility.
-2. Enforce secure access control through JWT-based authentication and role-aware route authorization.
-3. Implement deterministic donor compatibility search based on blood-group mapping and current donor availability.
-4. Support urgency-aware request lifecycle handling using structured request data and status fields.
-5. Enable administrative governance for user management and inventory updates through protected endpoints.
-6. Preserve data integrity by enforcing schema-level validation, enum constraints, minimum numeric rules, and controlled API payload structure.
+1. Establish a centralized and persistent data model for users, donor attributes, requests, and inventory.
+2. Enforce secure API access using token-based authentication and role-dependent authorization.
+3. Provide deterministic donor search based on blood-group compatibility and current donor availability.
+4. Record and expose urgency-level blood requests for rapid operational awareness.
+5. Support inventory monitoring and add/subtract transactions for each blood group.
+6. Maintain data integrity through schema constraints, enum validations, and minimum value checks.
 
 ## 1.2 Existing System
 
-Conventional workflows for blood coordination are usually distributed across phone calls, chat groups, and manually maintained donor lists. Although functional for low-volume activity, this method suffers from poor synchronization and weak reliability under stress conditions.
+In existing non-digital or partially digital workflows, donor and request information is commonly shared across calls, messaging groups, spreadsheets, or handwritten logs. The process is person-dependent and difficult to audit. Compatibility checks are frequently manual, and donor availability status may remain outdated after circumstances change.
 
-The existing process model presents several limitations. Donor records may not reflect current availability, blood-group matching is often performed manually, and request progression is not consistently visible to all participants. Operational controls are typically person-dependent rather than system-enforced, which reduces repeatability and auditability. As request concurrency increases, response quality declines because coordination effort scales faster than the process itself.
+Such workflows are vulnerable to inconsistency under concurrent requests. When multiple emergency cases arise, teams spend substantial time reconciling data from separate sources rather than acting on a unified and validated state. These shortcomings motivate the need for a structured, API-driven coordination platform.
 
 ## 1.3 Proposed System
 
-The proposed system introduces an integrated architecture that combines interface pages, API modules, middleware controls, and validated database entities.
+The proposed system is organized into three major layers. The presentation layer contains static HTML/CSS/JavaScript pages for public information, user login/register flows, profile updates, donor search, dashboard views, emergency request feeds, and admin operations. The application layer contains Express route modules for authentication, user operations, request handling, inventory handling, and admin-restricted functions. The persistence layer uses Mongoose schemas to enforce field types and constraints for each business entity.
 
-At the presentation layer, the application provides dedicated pages for login, registration, user dashboard, profile management, donor search, emergency request visibility, and administrative operations. At the application layer, Express route modules encapsulate domain behavior for authentication, user profile management, donor search, requests, inventory, and admin operations. At the persistence layer, Mongoose schemas enforce structure and data quality for users, requests, inventory, donor entries, and donation records.
-
-The final workflow supports end-to-end execution: user onboarding, token issuance, protected profile operations, donor discovery with compatibility filtering, urgency-tagged request creation, and inventory updates. This model reduces dependence on ad hoc coordination and improves process clarity for institutional deployment.
+A normal workflow begins with user registration and login, followed by token-protected profile operations. When a user opts in as a donor, blood-group and availability fields become part of eligibility filtering. Request creation stores patient and urgency details, while inventory APIs provide stock visibility and updates. Collectively, these modules form an end-to-end blood coordination pipeline with explicit access boundaries and structured state management.
 
 # 2. Literature Survey
 
-Digital blood management systems, as reflected by common architecture practices in healthcare web platforms, generally converge on a set of mandatory qualities: identity assurance, compatibility correctness, request prioritization, inventory observability, and administrative accountability.
+Current blood management systems in academic and practical deployments generally converge on five design expectations: authenticated identity, blood-group correctness, request prioritization, inventory observability, and administrative control. The implemented repository follows this pattern through modular APIs and strongly typed schemas.
 
-The implemented project aligns with this direction through explicit route-level security and schema-level validation. Identity is handled via account registration and JWT-backed sessions. Authorization is enforced through middleware for private and admin routes. Compatibility is implemented as deterministic blood-group logic rather than heuristic estimation, providing direct interpretability for every donor result generated by the system.
+From a software architecture perspective, modular route decomposition is recognized as an effective approach for maintainability. In this project, separate route files are used for `auth`, `users`, `requests`, `inventory`, and `admin` concerns. This separation reduces coupling and allows independent enhancement of each functional area.
 
-A second recurring observation in operational systems is that maintainability is strongly tied to modular decomposition. This project follows a route-per-domain strategy (`auth`, `users`, `requests`, `inventory`, `admin`), reducing coupling and simplifying updates. A third observation concerns usability: adoption improves when user tasks are grouped by intent. The frontend therefore separates request generation, donor search, profile management, and admin controls into dedicated views.
+Security practices in comparable systems prioritize stateless sessions and middleware-guarded routes. The platform adopts JWT verification in middleware and restricts privileged actions to authorized users and administrators. Data quality is enforced at schema level through enumerations for blood groups and urgency levels, unique constraints for email and blood-group inventory records, and numeric lower bounds for required units.
 
-Another practical requirement in blood coordination software is consistency between UI assumptions and active server routes. The repository includes both user-based donor search (`/api/users/search/:bloodGroup`) and standalone donor route logic (`routes/donorRoutes.js`). Since the standalone donor routes are not mounted in `server.js`, one class of compatibility queries must rely on the user module path in the current runtime. This reveals an integration lesson common in production systems: endpoint contracts and frontend API targets must be continuously harmonized.
+Another recurring pattern in real-world systems is dashboard-based transparency. The repository supports public aggregate donor counts and near-real-time request visibility via periodic client polling. This aligns with institutional needs where rapid awareness of critical demand can improve decision response.
 
 # 3. Methodology
 
-The implementation methodology follows a layered full-stack approach driven by functional decomposition. Requirements were mapped into entities, entities into API contracts, and contracts into page-level user actions. The same decomposition is reflected in repository organization: model definitions in `models/`, route logic in `routes/`, middleware in `middleware/`, and client assets in `public/`.
+The project methodology follows a full-stack, API-centered implementation model. Domain entities are defined in Mongoose schemas, route handlers implement business rules, middleware enforces authentication/authorization, and browser clients invoke APIs through fetch-based requests. Functional responsibilities are distributed so that each module has a clearly bounded scope.
 
 ## 3.1 Proposed Model/Architecture
 
-The runtime begins with server initialization, middleware registration, static file serving, and MongoDB connection setup. API routes are mounted under dedicated namespaces (`/api/auth`, `/api/users`, `/api/admin`, `/api/requests`, `/api/inventory`). Static pages are served from `public/`, and the base route loads `index.html`.
+The deployed architecture can be interpreted as a layered request-response system:
 
-From an architectural standpoint, the system is organized into three coordinated planes:
+1. **Client Layer:** Static pages in `public/` present forms, dashboards, and donor search interfaces.
+2. **Service Layer:** Express routes expose REST-style endpoints under `/api/*` namespaces.
+3. **Security Layer:** `protect` middleware validates bearer tokens, and `admin` middleware enforces role checks.
+4. **Data Layer:** MongoDB collections store user, request, and inventory documents through Mongoose models.
 
-- **Interaction Plane:** Browser-based forms and dashboards collect structured inputs and display request/inventory/donor state.
-- **Control Plane:** Express handlers process authenticated and public operations according to route and role.
-- **Persistence Plane:** Mongoose schemas validate and store operational records in MongoDB.
-
-### Technology Stack (with justification)
-
-Node.js with Express was selected for rapid API development, minimal deployment overhead, and natural middleware-driven request pipelines. The stack supports direct integration of authentication checks, role gates, and route modularity.
-
-MongoDB with Mongoose was selected because the data shape is document-centric and evolves around operational entities with varied fields. Mongoose adds strong validation through enums, required fields, regex matching, minimum values, and lifecycle hooks.
-
-JWT (`jsonwebtoken`) and `bcryptjs` provide a practical security base for stateless authentication and secure credential storage. Password hashing occurs before persistence through pre-save middleware, and protected routes verify bearer tokens for identity continuity.
-
-The frontend uses static HTML/CSS/JavaScript to keep the interface lightweight and transparent. This choice reduces complexity while preserving dynamic behavior through API calls and periodic polling.
-
-### System Architecture and Workflow / Data Flow
-
-A complete request cycle is executed as follows:
-
-1. **Registration and Login:** A new user account is created through `/api/auth/register`; login through `/api/auth/login` returns a JWT.
-2. **Session Establishment:** Token data is stored client-side and attached to protected requests through authorization headers.
-3. **Profile and Donor Activation:** The user updates profile metadata via `/api/users/profile`, including donor flags and availability.
-4. **Donor Search:** For a selected patient blood group, `/api/users/search/:bloodGroup` computes compatible donor groups and returns available donors.
-5. **Request Submission:** Blood requirement records are posted to `/api/requests` with urgency level and clinical location details.
-6. **Request Visibility:** Pages fetch `/api/requests` periodically to present current requests and emergency signals.
-7. **Inventory Maintenance:** `/api/inventory` endpoints provide stock reads and updates; admin routes offer privileged governance actions.
-
-### Module-wise Explanation
-
-**Authentication Module:**
-`routes/authRoutes.js` implements registration, login, and authenticated profile fetch. Token generation uses a configurable secret and fixed expiry interval.
-
-**User Module:**
-`routes/userRoutes.js` handles profile updates and compatibility-based donor retrieval. It also exposes donor-count aggregation by blood group for available donors.
-
-**Request Module:**
-`routes/requestRoutes.js` supports request creation, listing, and updates. Creation is protected, while listing is public to support emergency visibility use cases.
-
-**Inventory Module:**
-`routes/inventoryRoutes.js` handles inventory listing, additive/subtractive stock adjustment, and optional initialization of all blood groups.
-
-**Admin Module:**
-`routes/adminRoutes.js` applies global protection via `protect` and `admin` middleware to ensure only administrators can manage users and execute admin inventory updates.
-
-**Middleware Layer:**
-`authMiddleware.js` verifies JWT and binds user context to requests. `roleMiddleware.js` validates admin privileges for restricted operations.
-
-**Frontend Layer:**
-`public/js/main.js` centralizes helper functions (auth header, login state, logout, emergency banner polling). `public/js/emergency.js` and inline page scripts coordinate request creation and display. `public/js/dashboard.js` handles inventory rendering and update form submission.
+The server bootstrap in `server.js` loads middleware, establishes MongoDB connectivity, mounts route modules, and serves static frontend assets. This centralized startup flow enables consistent deployment behavior.
 
 ## 3.2 Datasets
 
-The application relies on operational datasets generated through user interaction and API transactions. No external benchmark dataset is required for current functionality.
+No external benchmark dataset is used in this project. Instead, the system operates on transactional application data created during normal use. The effective datasets are as follows:
 
-### User Dataset
+- **User Dataset (`users` collection):** Contains identity fields (name, email), login credentials (hashed password), profile metadata (phone, location), and donor-specific attributes (`isDonor`, `bloodGroup`, `availabilityStatus`, `lastDonationDate`).
+- **Request Dataset (`requests` collection):** Stores patient name, required blood group, number of units, hospital details, urgency level, request status, and creation timestamp.
+- **Inventory Dataset (`inventories` collection):** Maintains blood-group-wise stock counts, uniqueness per group, and last update time.
 
-The user entity stores identity fields (`name`, `email`, `password`, `phone`, `location`) and authorization context (`role`). Donor-centric attributes include `isDonor`, `bloodGroup`, `lastDonationDate`, and `availabilityStatus`. Email uniqueness is enforced and blood group values are restricted to valid enumerations.
-
-### Request Dataset
-
-Request records include `patientName`, `requiredBloodGroup`, `unitsRequired`, `hospitalName`, `urgencyLevel`, and `requestStatus`, with automatic timestamping. Numeric and enum validation constrains incorrect input at persistence level.
-
-### Inventory Dataset
-
-Inventory records track one document per blood group with `availableUnits` and `lastUpdated`. Non-negative quantity constraints and pre-save timestamp updates preserve consistency.
-
-### Donor and Donation Datasets
-
-A standalone donor schema (`models/Donor.js`) and donation schema (`models/Donation.js`) are present for extended scenarios. The donor schema includes age, compatibility fields, and availability state. In the current server configuration, standalone donor routes are present in code but are not active because they are not mounted by `server.js`.
+These datasets are schema-governed and form the basis for donor search, emergency feeds, and inventory dashboards.
 
 ## 3.3 Algorithm(Title if any)
 
-### Blood Group Compatibility and Availability Filtering
+### Blood Group Compatibility Matching Algorithm
 
-The implemented search strategy is deterministic and rule-based. A compatibility dictionary defines recipient groups for each donor blood group. During execution, the algorithm identifies all donor groups that can donate to the selected patient group and applies availability filtering before returning results.
+The donor retrieval logic is implemented through deterministic compatibility mapping. Each donor blood group maps to a list of recipient groups. For a requested patient group, the algorithm computes all donor groups whose recipient list contains that patient group.
 
-This approach offers high transparency. Every returned donor can be traced to a specific compatibility rule and explicit status condition. Such traceability is essential in operational healthcare support where explainability is mandatory.
+Algorithmic flow:
 
-### Algorithm Steps
+1. Accept patient blood group from route parameter.
+2. Traverse compatibility map entries (`donorGroup -> recipientGroups`).
+3. Collect donor groups that can serve the patient group.
+4. Query user records with constraints: donor enabled, compatible blood group, and `Available` status.
+5. Return only essential donor fields for contact and decision support.
 
-1. Receive patient blood group from route parameter.
-2. Iterate over compatibility map entries (`donorGroup -> recipientGroups`).
-3. Select donor groups whose recipient list contains the patient group.
-4. Query donor records with three constraints:
-   - donor participation active (`isDonor = true`)
-   - donor blood group in compatible set (`$in`)
-   - current eligibility state (`availabilityStatus = 'Available'`)
-5. Return constrained donor fields for contact and decision support.
-
-### Representative Implementation
+Representative code:
 
 ```javascript
 for (const [donorGroup, recipients] of Object.entries(donorCompatibility)) {
@@ -163,64 +102,49 @@ const donors = await User.find({
 }).select('name bloodGroup location phone lastDonationDate availabilityStatus');
 ```
 
-### Security and Validation Behavior in the Algorithmic Path
-
-The donor search endpoint is protected by authentication middleware. As a result, compatibility output is not exposed to anonymous clients. At data level, donor blood groups are constrained by schema enums, ensuring search filtering is executed on valid domain values only.
+This approach avoids probabilistic ranking and provides transparent compatibility decisions suitable for healthcare-oriented review.
 
 ## 3.4 Performance Metrics
 
-Current performance assessment is centered on practical, measurable behavior available from existing API endpoints and UI flows.
+The implemented repository does not include a formal benchmarking harness, but practical performance and correctness can be evaluated using operational metrics:
 
-### Technical Metrics
+- **Authentication correctness:** Success and rejection behavior across register, login, and protected profile APIs.
+- **Compatibility response quality:** Accuracy of donor group matching and filtering of unavailable donors.
+- **Request feed timeliness:** Delay between request creation and visibility on dashboard/emergency pages using periodic polling.
+- **Inventory transaction integrity:** Correctness of add/subtract updates and prevention of negative unit states.
+- **Authorization enforcement:** Correct issuance of `401` or `403` responses for unauthorized actions.
 
-1. **Authentication Reliability:** success ratio for register/login/profile flows and correctness of token-protected access.
-2. **Search Performance:** average response time of compatibility lookup and correctness of donor eligibility filters.
-3. **Request Throughput Visibility:** time gap between request creation and dashboard display under polling.
-4. **Inventory Consistency:** correctness of add/subtract operations and non-negative stock persistence.
-5. **Authorization Rejection Accuracy:** frequency and correctness of 401/403 responses for restricted routes.
-
-### Operational Metrics
-
-1. **Emergency Awareness Delay:** time required for critical requests to appear in visible client alerts.
-2. **Donor Reachability Quality:** proportion of returned donors with actionable contact and location fields.
-3. **Administrative Control Effectiveness:** time and effort required for user governance and stock intervention.
-4. **Data Integrity Stability:** incidence of invalid records blocked by schema-level validation.
+These metrics are directly measurable from the existing API behavior and frontend interaction flows.
 
 # 4. Results and Discussion
 
-Functional verification of repository workflows indicates that core operational requirements are implemented and executable with MongoDB and JWT environment settings.
+Repository-level verification indicates that the core system pipeline is operational. The authentication module supports registration and login, with JWT generation and profile retrieval under protected routes. User profile updates allow transition into donor mode and record availability metadata required for search eligibility.
 
-Registration and login pipelines return valid session payloads, and profile retrieval operates under bearer-token protection. Profile update flow supports donor activation and blood-group assignment. Donor search returns only compatible and available entries when accessed through the user route module. Request creation captures urgency and hospital context, while listing endpoints provide chronological request visibility. Inventory modules support both retrieval and transactional update of blood-group stock.
+Donor discovery is functionally implemented through the compatibility map and filtered database query. Request management stores emergency details with urgency classifications and exposes request lists sorted by recency. Inventory endpoints provide blood-group-wise status and transactional updates, while helper initialization supports bootstrapping all blood groups.
 
-The frontend exhibits coherent task separation. User dashboards support request submission and profile status visibility, donor search pages provide group-based query interfaces, and emergency-oriented displays poll request records for near-real-time updates. Admin routes enforce role gates before exposing user-management or privileged inventory operations.
+Frontend pages demonstrate end-user task separation: public home statistics, authenticated profile updates, donor search interface, request creation forms, and inventory visualization cards. Polling mechanisms in client scripts provide repeated refresh for emergency awareness and inventory visibility.
 
-A key architectural observation emerges from integration behavior: there is partial divergence between certain frontend API calls and active server route mounts. Specifically, repository code includes standalone donor route logic and scripts that reference `/api/donors/*`, while active server mounting focuses on `/api/users/search/:bloodGroup` for compatibility retrieval. This does not invalidate core functionality, but it highlights a deployment hardening task.
-
-Overall, the present implementation demonstrates a practical, modular base for institutional blood coordination workflows, with strong potential for extension through route harmonization and test coverage.
+A notable implementation observation is route inconsistency in selected frontend scripts. Certain client calls reference `/api/donors/*`, whereas server-mounted routes include `/api/users/search/:bloodGroup` for donor compatibility retrieval. The platform remains functionally extensible, but harmonizing these endpoint contracts would improve deployment consistency.
 
 # 5. Conclusion & Future scope
 
-The implemented system establishes a clear and technically grounded framework for blood request coordination. It combines secure user identity handling, compatibility-oriented donor discovery, urgency-aware request processing, and maintainable inventory operations in a single web architecture.
-
-The design strength lies in deterministic logic and modular implementation. Data validation is pushed close to persistence, authorization is enforced at middleware boundaries, and user operations are presented through dedicated interface contexts. These characteristics make the platform suitable as an academic and pre-production reference model.
+The implemented system provides a structured and technically coherent solution for blood coordination workflows. It combines secure identity management, medically aligned donor compatibility logic, urgency-aware request recording, and inventory tracking within a modular web architecture.
 
 ### Advantages
 
-The system centralizes records and minimizes dependency on informal communication channels. Compatibility logic is transparent and auditable. Role-based control introduces governance boundaries. Schema-level validation reduces malformed data entry, and modular routes improve maintainability and incremental extension.
+The system centralizes operational data and reduces reliance on ad hoc communication channels. Compatibility filtering is explicit and auditable. Schema-level validation improves data quality, and middleware boundaries establish clear access control for protected and administrative operations.
 
 ### Limitations
 
-Standalone donor APIs exist in the codebase but are not mounted in the active server configuration, creating route inconsistency for some client-side code paths. Public request listing is available while request creation is protected; this policy may need institutional review depending on privacy requirements. The project currently lacks an automated test suite in package scripts.
+The repository presently shows partial mismatch between some frontend donor API calls and active server route mounts. Request creation is protected, yet listing is broadly accessible, which may require policy refinement for privacy-sensitive deployments. Automated test scripts are minimal, so regression assurance depends largely on manual verification.
 
 ### Future scope
 
-Future enhancements can prioritize end-to-end route harmonization, request ownership and status-transition control, audit trail recording, and production-grade observability. Notification channels (SMS/email/push), analytics for stock trends and urgency forecasting, and automated integration tests for critical endpoints can significantly improve operational readiness.
+Future enhancements can include endpoint harmonization, request ownership and lifecycle governance, notification integration (SMS/email/push), audit logging, and stronger automated testing for critical workflows. Analytical modules for demand prediction and stock trend visualization can further improve institutional readiness.
 
 # 6. References
 
-1. Node.js Official Documentation. https://nodejs.org/
-2. Express.js Documentation. https://expressjs.com/
-3. MongoDB Documentation. https://www.mongodb.com/docs/
-4. Mongoose Documentation. https://mongoosejs.com/docs/
-5. JSON Web Token (JWT) Documentation. https://jwt.io/introduction
-6. bcryptjs Package Documentation. https://www.npmjs.com/package/bcryptjs
+1. Repository source code: `server.js`, `routes/*.js`, `models/*.js`, `middleware/*.js`, and frontend files under `public/`.
+2. Express.js middleware and routing model as reflected in implementation structure.
+3. MongoDB with Mongoose schema validation patterns used throughout the project.
+4. JSON Web Token based session handling used in authentication middleware.
